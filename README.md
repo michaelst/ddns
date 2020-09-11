@@ -1,4 +1,4 @@
-# Ddns
+# DDNS
 
 **TODO: Add description**
 
