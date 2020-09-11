@@ -18,6 +18,8 @@ defmodule DDNS do
   def handle_info(:check, state) do
     external_ip = external_ip()
 
+    Logger.info("Checking IPs")
+
     updated_state =
       state
       |> Enum.reject(fn {_id, ip} -> ip == external_ip end)

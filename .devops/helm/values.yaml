@@ -1,0 +1,11 @@
+nameOverride: ddns
+replicaCount: 1
+
+imagePullSecrets:
+  - name: "gcr-json-key"
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 80M
+
