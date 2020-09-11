@@ -63,13 +63,14 @@ defmodule DDNS do
   end
 
   defp external_ip() do
-    :os.cmd('dig +short myip.opendns.com @resolver1.opendns.com')
-    |> to_string()
-    |> String.trim()
-    |> case do
-      "dig:" <> _ -> {:error, "couldn't get IP"}
-      ip -> {:ok, ip}
-    end
+    result =
+      :os.cmd('dig +short myip.opendns.com @resolver1.opendns.com')
+      |> to_string()
+      |> String.trim()
+
+    if Regex.match?(~r/\b(?:\d{1,3}\.){3}\d{1,3}\b/, result),
+      do: {:ok, result},
+      else: {:error, "couldn't get IP"}
   end
 
   defp get_current_ip_for_domain(domain) do
