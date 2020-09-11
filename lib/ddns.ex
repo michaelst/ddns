@@ -16,24 +16,33 @@ defmodule DDNS do
 
   @impl true
   def handle_info(:check, state) do
-    external_ip = external_ip()
-
-    Logger.info("Checking IPs")
-
     updated_state =
-      state
-      |> Enum.reject(fn {_id, ip} -> ip == external_ip end)
-      |> Enum.map(fn {id, ip} ->
-        Logger.info("Updating #{id} from #{ip} to #{external_ip}")
+      case external_ip() do
+        {:ok, external_ip} ->
+          Logger.info("Checking IPs")
 
-        new_ip = update_ip_for_domain(id, external_ip)
-        {id, new_ip}
-      end)
-      |> Map.new()
+          updated_ips =
+            state
+            |> Enum.reject(fn {_id, ip} -> ip == external_ip end)
+            |> Enum.map(fn {id, ip} ->
+              Logger.info("Updating #{id} from #{ip} to #{external_ip}")
+
+              new_ip = update_ip_for_domain(id, external_ip)
+              {id, new_ip}
+            end)
+            |> Map.new()
+
+          Map.merge(state, updated_ips)
+
+        {:error, _} ->
+          Logger.error("Couldn't check IPs")
+
+          state
+      end
 
     schedule_check()
 
-    {:noreply, Map.merge(state, updated_state)}
+    {:noreply, updated_state}
   end
 
   @impl true
@@ -44,8 +53,8 @@ defmodule DDNS do
   end
 
   defp schedule_check() do
-    # in 10 seconds
-    Process.send_after(self(), :check, 10 * 1000)
+    # in 5 seconds
+    Process.send_after(self(), :check, 5 * 1000)
   end
 
   defp schedule_reset() do
@@ -57,6 +66,10 @@ defmodule DDNS do
     :os.cmd('dig +short myip.opendns.com @resolver1.opendns.com')
     |> to_string()
     |> String.trim()
+    |> case do
+      "dig:" <> _ -> {:error, "couldn't get IP"}
+      ip -> {:ok, ip}
+    end
   end
 
   defp get_current_ip_for_domain(domain) do
