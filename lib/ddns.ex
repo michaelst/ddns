@@ -16,6 +16,8 @@ defmodule DDNS do
 
   @impl true
   def handle_info(:check, state) do
+    schedule_check()
+
     updated_state =
       case external_ip() do
         {:ok, external_ip} ->
@@ -39,8 +41,6 @@ defmodule DDNS do
 
           state
       end
-
-    schedule_check()
 
     {:noreply, updated_state}
   end
